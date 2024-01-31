@@ -1,0 +1,180 @@
+In Django, a "manager" is a class attribute in a Django model that provides a convenient interface for querying the database. Managers are used to perform database queries and encapsulate the logic for retrieving, creating, updating, and deleting records in the database associated with the model.
+
+Key points about managers:
+
+1. **Default Manager:**
+   - Every Django model has at least one manager by default.
+   - If you don't explicitly define a manager, Django creates one named `objects`.
+   - Example: `objects = models.Manager()`
+
+2. **Custom Managers:**
+   - You can define custom managers to extend the default functionality.
+   - Custom managers are useful for encapsulating complex query logic or adding convenience methods.
+   - Example: `objects = CustomManager()`
+
+3. **Query Methods:**
+   - Managers provide methods for querying the database, such as `all()`, `filter()`, `get()`, etc.
+   - Example: `MyModel.objects.all()`, `MyModel.objects.filter(name='John')`
+
+4. **Chaining:**
+   - Methods can be chained to create more complex queries.
+   - Example: `MyModel.objects.filter(name__icontains='John').exclude(age__lt=30)`
+
+5. **Custom Methods:**
+   - You can add custom methods to the manager to encapsulate business logic.
+   - Example: `CustomManager.get_users_with_high_salary()`
+
+6. **Use in Models:**
+   - Managers are typically defined as a class attribute within the model.
+   - Example:
+     ```python
+     class MyModel(models.Model):
+         # fields here
+
+         objects = CustomManager()
+     ```
+
+Here's a simple example of a custom manager:
+
+```python
+from django.db import models
+
+class CustomManager(models.Manager):
+    def get_users_with_high_salary(self):
+        return self.filter(salary__gt=50000)
+
+class Employee(models.Model):
+    name = models.CharField(max_length=100)
+    salary = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    objects = CustomManager()
+```
+
+In this example, `CustomManager` is a custom manager class that extends `models.Manager`. It provides a custom method `get_users_with_high_salary` to retrieve employees with a salary greater than 50000. The `Employee` model uses this custom manager through the `objects` attribute.
+
+Usage of the custom manager:
+
+```python
+# Retrieve employees with a high salary using the custom manager
+high_salary_employees = Employee.objects.get_users_with_high_salary()
+```
+
+Managers play a crucial role in simplifying database interactions and promoting code organization in Django models. They help abstract away the complexity of database queries and allow for cleaner, more maintainable code.
+
+
+
+The `normalize_email` function is part of the default user authentication system in Django, and it is used to ensure consistency and uniformity in the storage of email addresses. It is often applied when creating or updating user instances.
+
+Here's why `normalize_email` is used:
+
+1. **Consistency:**
+   - Email addresses are case-insensitive. However, some email providers treat the local part (before the '@' symbol) as case-sensitive. To ensure consistency and avoid potential issues, it's a common practice to normalize email addresses to lowercase.
+
+2. **Unique Constraints:**
+   - In databases, unique constraints are often case-sensitive. By normalizing email addresses to lowercase, you avoid potential issues related to case sensitivity when enforcing uniqueness constraints on email fields.
+
+3. **Query Consistency:**
+   - When querying the database for user information based on email addresses, normalizing the email addresses ensures that the query is case-insensitive and matches regardless of the case.
+
+Here's a breakdown of the line of code you provided:
+
+```python
+user = self.model(
+    email=self.normalize_email(email),
+    name=name,
+    tc=tc,
+)
+```
+
+- `self.model`: Refers to the user model for which the manager is responsible.
+
+- `normalize_email(email)`: Applies the normalization process to the provided email address. This typically involves converting the email address to lowercase.
+
+- `name` and `tc`: Other fields of the user model that are being set.
+
+By normalizing the email address before saving it to the user model, you ensure that variations in the case of email addresses don't lead to inconsistencies in your database or issues with unique constraints. It's a good practice to normalize email addresses when dealing with user authentication to promote a standardized and reliable approach to email handling.
+
+
+
+In Django and Django REST framework, views and serializers play crucial roles in handling HTTP requests and responses. Let's discuss how views and serializers work and the functions of serializers.
+
+### Views:
+
+- **Responsibility:**
+  - Views in Django handle incoming HTTP requests and return appropriate HTTP responses.
+  - In Django REST framework, views are responsible for processing requests and returning serialized data or other responses.
+
+- **Types of Views:**
+  - **Function-Based Views (FBV):** Defined as regular Python functions.
+  - **Class-Based Views (CBV):** Defined as classes inheriting from Django REST framework's `APIView` or its subclasses.
+
+- **Functionality:**
+  - Views encapsulate the logic for processing requests, including data retrieval, validation, and response generation.
+  - They interact with models, serializers, and other components to fulfill the requirements of the endpoint.
+
+- **Example:**
+  ```python
+  from rest_framework.views import APIView
+  from rest_framework.response import Response
+  from rest_framework import status
+
+  class MyView(APIView):
+      def get(self, request):
+          # Processing logic
+          data = {'message': 'Hello, World!'}
+          return Response(data, status=status.HTTP_200_OK)
+  ```
+
+### Serializers:
+
+- **Responsibility:**
+  - Serializers in Django REST framework are responsible for converting complex data types (e.g., Django models) into Python data types that can be easily rendered into JSON or other content types.
+  - They also handle validating incoming data and deserializing it into the appropriate data structures.
+
+- **Functionality:**
+  - Serializers define the structure of the data that is sent to or received from the views.
+  - They handle converting complex data types into native Python data types and vice versa.
+  - Serializers validate the incoming data based on predefined rules.
+  - They handle representing relationships between models and other complex structures.
+
+- **Example:**
+  ```python
+  from rest_framework import serializers
+
+  class MyModelSerializer(serializers.Serializer):
+      id = serializers.IntegerField(read_only=True)
+      name = serializers.CharField(max_length=100)
+      age = serializers.IntegerField()
+
+  # Usage in a view
+  class MyView(APIView):
+      def post(self, request):
+          serializer = MyModelSerializer(data=request.data)
+          if serializer.is_valid():
+              # Process valid data
+              return Response(serializer.data, status=status.HTTP_201_CREATED)
+          else:
+              return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+  ```
+
+### Workflow:
+
+1. **Request Handling:**
+   - A request is received by the view.
+
+2. **Data Validation and Deserialization:**
+   - The view uses a serializer to validate and deserialize the incoming data.
+
+3. **Business Logic:**
+   - The view may perform business logic, such as querying the database, based on the deserialized data.
+
+4. **Response Serialization:**
+   - The view uses the serializer to serialize the data that will be sent in the response.
+
+5. **Response Generation:**
+   - The view generates an HTTP response containing the serialized data.
+
+6. **Response Sending:**
+   - The response is sent back to the client.
+
+In summary, views handle the overall flow of request processing, including data validation and response generation, while serializers handle the conversion and validation of data structures. Together, they provide a structured and efficient way to handle HTTP requests and responses in Django REST framework.
